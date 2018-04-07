@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en" Content-Type="text/plain">
+    <head>
+        <!-- 1:dummy data,0:サーバーにアクセス -->
+        <input type="hidden" id="testFlag" value="0">
+            
+            <!-- Required meta tags -->
+            <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+                    
+                    <!-- Optional JavaScript -->
+                    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+                    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+                    
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+                    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+                    
+                    <!-- Bootstrap CSS -->
+                    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+                        
+                        <style type="text/css">
+                            html {
+                                position: relative;
+                                min-height: 100%;
+                            }
+                        body {
+                            /* Margin bottom by footer height */
+                            margin-bottom: 120px;
+                        }
+                        .footer {
+                            position: fixed;
+                            bottom: 0;
+                            width: 100%;
+                            /* Set the fixed height of the footer here */
+                            height: 100px;
+                            background-color: #f5f5f5;
+                        }
+                        </style>
+                        
+                        
+                        <title>精算の巻</title>
+                        
+                        <script type="text/javascript">
+                            
+                            // 初期処理
+                            function initPage(){
+                                
+                                var ad_event_list;
+                                
+                                // テストモードで仮データ
+                                if("1" == $('#testFlag').val()){
+                                    ad_event_list = [{"eventId":"1","adUserFrom":"chen","adUserTo":"luo","adAmount":"4000","adDate":"2018-01-02 00:00"}
+                                                   ,{"eventId":"2","adUserFrom":"zhang","adUserTo":"luo","adAmount":"200","adDate":"2018-01-01 11:11"}];
+                                }
+                                // サーバーにアクセスモードで
+                                else {
+                                    var xmlhttp = new XMLHttpRequest();
+                                    var url = "http://0.0.0.0:3000/getEvent";
+                                    
+                                    
+                                    xmlhttp.onreadystatechange = function() {
+                                        if(this.readyState == 4){
+                                            if (this.status == 200) {
+                                                var respInfo = JSON.parse(this.responseText);
+                                                ad_event_list = respInfo["adEvents"];
+                                            } else {
+                                                alert("サーバーに接続失敗");
+                                                return;
+                                            }
+                                        }
+                                    };
+                                    xmlhttp.open("POST", url, false);
+                                    xmlhttp.send();
+                                    
+                                }
+                                
+                                
+                                // 精算一覧生成
+                                var tb = document.getElementById("adjust-list");
+                                var i = 1;
+                                for (var row of ad_event_list) {
+                                    var tr = tb.insertRow(-1)
+                                    tr.insertCell(-1).innerHTML = i;
+                                    tr.insertCell(-1).innerHTML = row["eventId"];
+                                    tr.insertCell(-1).innerHTML = row["adUserFrom"];
+                                    tr.insertCell(-1).innerHTML = row["adUserTo"];
+                                    tr.insertCell(-1).innerHTML = row["adAmount"];
+                                    tr.insertCell(-1).innerHTML = row["adDate"];
+                                    
+                                    var bt = '<button type="button"   data-toggle="modal" data-target="#detailModal" class="btn btn-warning btn-sm" data-whatever="' + row["eventId"] + '">詳細</button>'
+                                    tr.insertCell(-1).innerHTML = bt;
+                                    
+                                    i++;
+                                }
+                                
+                                
+                            }
+                        
+                        
+                        
+                        $(function () {
+                          
+                          // 詳細押下-表示後処理
+                          $('#detailModal').on('hidden.bs.modal', function (e) {
+                                               // クリア
+                                               var tb = document.getElementById("detail-list");
+                                               while( tb.rows[ 1 ] ) tb.deleteRow( 1 );
+                                               })
+                          
+                          
+                          // 詳細押下
+                          $('#detailModal').on('show.bs.modal', function (e) {
+                                               
+                                               //alert("詳細押下");
+                                               var detailListAB;
+                                               var detailListBA;
+                                               
+                                               var button = $(e.relatedTarget); //モーダルを呼び出すときに使われたボタンを取得
+                                               var eventId = button.data("whatever");
+                                               
+                                               // 引数を詰める
+                                               var param = {};
+                                               param.eventId=eventId;
+                                               
+                                               
+                                               // テストモードで仮データ
+                                               if("1" == $('#testFlag').val()){
+                                               detailListAB = [{"userNmFrom":"luo","userNmTo":"chen","payNum":"1","adNum":"10","use":"電気代","amount":"1000"}
+                                                               ,{"userFrom":"luo","userTo":"chen","payNum":"2","adNum":"20","use":"ガス代","amount":"2000"}];
+                                               
+                                               detailListBA = [{"userNmFrom":"chen","userNmTo":"luo","payNum":"3","adNum":"30","use":"12月スキー","amount":"3000"}
+                                                               ,{"userFrom":"chen","userTo":"luo","payNum":"4","adNum":"40","use":"家賃","amount":"4000"}];
+                                               }
+                                               // サーバーにアクセスモードで
+                                               else {
+                                               var xmlhttp = new XMLHttpRequest();
+                                               var url = "http://0.0.0.0:3000/getDetailsByIds";
+                                               
+                                               
+                                               xmlhttp.onreadystatechange = function() {
+                                               if (this.readyState == 4){
+                                               if (this.status == 200) {
+                                               var respInfo = JSON.parse(this.responseText);
+                                               detailListAB = respInfo["detailListAB"];
+                                               detailListBA = respInfo["detailListBA"];
+                                               } else {
+                                               alert("サーバーに接続失敗");
+                                               return;
+                                               }
+                                               }
+                                               };
+                                               xmlhttp.open("POST", url, false);
+                                               xmlhttp.send(JSON.stringify(param));
+                                               
+                                               }
+                                               
+                                               
+                                               
+                                               
+                                               
+                                               var ad_ids = [];
+                                               
+                                               var totalAB = 0;
+                                               if(detailListAB.length != 0){
+                                               var tb = document.getElementById("detail-list");
+                                               var count = 0;
+                                               for (var row of detailListAB) {
+                                               var tr = tb.insertRow(-1)
+                                               if(count == 0){
+                                               tr.insertCell(-1).innerHTML = row["userNmFrom"];
+                                               tr.insertCell(-1).innerHTML = row["userNmTo"];
+                                               } else {
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "";
+                                               }
+                                               tr.insertCell(-1).innerHTML = row["payNum"];
+                                               tr.insertCell(-1).innerHTML = row["adNum"];
+                                               tr.insertCell(-1).innerHTML = row["use"];
+                                               tr.insertCell(-1).innerHTML = row["amount"];
+                                               
+                                               totalAB += Number(row["amount"]);
+                                               
+                                               //精算number保持
+                                               ad_ids.push(row["adNum"]);
+                                               
+                                               
+                                               count++;
+                                               }
+                                               
+                                               // 合計A
+                                               var tr = tb.insertRow(-1)
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "合計A";
+                                               tr.insertCell(-1).innerHTML = String(totalAB);
+                                               
+                                               tr.cells[4].style.backgroundColor = "yellow";
+                                               tr.cells[5].style.backgroundColor = "yellow";
+                                               
+                                               }
+                                               
+                                               var totalBA = 0;
+                                               if(detailListBA.length != 0){
+                                               var tb = document.getElementById("detail-list");
+                                               var count = 0;
+                                               for (var row of detailListBA) {
+                                               var tr = tb.insertRow(-1)
+                                               if(count == 0){
+                                               tr.insertCell(-1).innerHTML = row["userNmFrom"];
+                                               tr.insertCell(-1).innerHTML = row["userNmTo"];
+                                               } else {
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "";
+                                               }
+                                               tr.insertCell(-1).innerHTML = row["payNum"];
+                                               tr.insertCell(-1).innerHTML = row["adNum"];
+                                               tr.insertCell(-1).innerHTML = row["use"];
+                                               tr.insertCell(-1).innerHTML = row["amount"];
+                                               
+                                               totalBA += Number(row["amount"]);
+                                               
+                                               //精算number保持
+                                               ad_ids.push(row["adNum"]);
+                                               
+                                               count++;  
+                                               }
+                                               
+                                               // 合計B
+                                               var tr = tb.insertRow(-1)
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "合計B";
+                                               tr.insertCell(-1).innerHTML = String(totalBA);
+                                               
+                                               tr.cells[4].style.backgroundColor = "yellow";
+                                               tr.cells[5].style.backgroundColor = "yellow";
+                                               
+                                               }
+                                               
+                                               
+                                               // 総計
+                                               var total_from = "";
+                                               var total_to = "";
+                                               var total_text = "総計";
+                                               var total_amount = 0;
+                                               
+                                               // 総計出力のため、比較、計算
+                                               if(totalAB > totalBA){
+                                               total_from = detailListAB[0]["userNmFrom"];
+                                               total_to = detailListAB[0]["userNmTo"];
+                                               total_amount = totalAB - totalBA;
+                                               } else if (totalBA > totalAB){
+                                               total_from = detailListBA[0]["userNmFrom"];
+                                               total_to = detailListBA[0]["userNmTo"];
+                                               total_amount = totalBA - totalAB;
+                                               }
+                                               
+                                               var tb = document.getElementById("detail-list");
+                                               var tr = tb.insertRow(-1);
+                                               tr.style.backgroundColor = "yellow";
+                                               tr.style.color = "red";
+                                               tr.style.fontSize = "large";
+                                               tr.insertCell(-1).innerHTML = total_from;
+                                               tr.insertCell(-1).innerHTML = total_to;
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "";
+                                               tr.insertCell(-1).innerHTML = "総計";
+                                               tr.insertCell(-1).innerHTML = String(total_amount);
+                                               
+                                               })
+                          });
+                          
+                          
+                            </script>
+                        
+                        </head>
+    
+    
+    <body onLoad="initPage()">
+        <div class="container">
+            <!-- header. fix me,共通化 -->
+            <header class="blog-header py-3">
+                <div class="row flex-nowrap justify-content-between align-items-center">
+                    <div class="col-4 pt-1">
+                        <a class="text-muted" href="#"><h6>LauncHope co.,ltd.</h6></a>
+                    </div>
+                    <div class="col-4 text-center">
+                        <a class="blog-header-logo text-dark" href="#"><h2>精算の巻</h2></a>
+                    </div>
+                    <div class="col-4 d-flex justify-content-end align-items-center">
+                        <a class="text-muted" href="#">
+                        </a>
+                        <a class="btn btn-sm btn-outline-secondary" href="#">Sign up</a>
+                    </div>
+                </div>
+            </header>
+            <hr>
+            <div class="nav-scroller py-1 mb-2">
+                <nav class="nav d-flex justify-content-between">
+                    <a class="p-2 text-muted" href="./main.html">ホーム</a>
+                    <a class="p-2 text-muted" href="./main.html">支払い</a>
+                    <a class="p-2 text-muted" href="./adjust.html">精算</a>
+                    <a class="p-2 text-muted" href="./history.html">履歴</a>
+                    <a class="p-2 text-muted" href="#">連絡</a>
+                </nav>
+            </div>
+            
+            <!-- 送信用 -->
+            <input type="hidden" id="adjust_user_from" value="">
+                <input type="hidden" id="adjust_user_to" value="">
+                    <input type="hidden" id="adjust_ids" value="">
+                        <input type="hidden" id="adjust_amount" value="">
+                            
+                            
+                            <div id="detail-result" class="card" style="width:100%;margin: 0 auto;margin-top: 20px;font-size: 1.2vw;">
+                                <h6 class="card-header">精算履歴一覧</h6>
+                                <div class="card-body">
+                                    <table id="adjust-list" class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">#</th>
+                                                <th scope="col">精算番号</th>
+                                                <th scope="col">FROM</th>
+                                                <th scope="col">TO</th>
+                                                <th scope="col">金額</th>
+                                                <th scope="col">精算日時</th>
+                                                <th scope="col">詳細</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Modal -->
+                            <div class="modal fade bd-example-modal-lg" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-lg" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-body" id="detail_text">
+                                            <table id="detail-list" class="table table-sm" style="font-size:80%;">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">FROM</th>
+                                                        <th scope="col">TO</th>
+                                                        <th scope="col">支払番号</th>
+                                                        <th scope="col">詳細番号</th>
+                                                        <th scope="col">用途</th>
+                                                        <th scope="col">金額</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+        
+        <footer class="footer">
+            <div class="container">
+                <span style="text-align: center;">
+                    <br>
+                    <p>Designed by LauncHope@711-group<br>
+                    <a href="#">Back to top</a>
+                    </p>
+                </span>
+            </div>
+        </footer>
+    </body>
+</html>

@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en" Content-Type="text/plain">
+    <head>
+        <!-- 1:dummy data,0:サーバーにアクセス -->
+        <input type="hidden" id="testFlag" value="0">
+            
+            <!-- Required meta tags -->
+            <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+                    
+                    <!-- Optional JavaScript -->
+                    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+                    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+                    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+                    
+                    <!-- Bootstrap CSS -->
+                    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+                        
+                        <style type="text/css">
+                            html {
+                                position: relative;
+                                min-height: 100%;
+                            }
+                        body {
+                            /* Margin bottom by footer height */
+                            margin-bottom: 120px;
+                        }
+                        .footer {
+                            position: fixed;
+                            bottom: 0;
+                            width: 100%;
+                            /* Set the fixed height of the footer here */
+                            height: 100px;
+                            background-color: #f5f5f5;
+                        }
+                        </style>
+                        
+                        <title>精算の巻</title>
+                        
+                        <script type="text/javascript">
+                            
+                            // 初期処理
+                            function initPage(){
+                                var userlist;
+                                var paylist;
+                                // テストモードで仮データ
+                                if("1" == $('#testFlag').val()){
+                                    userlist = [{"id":"1","name":"luo"},{"id":"2","name":"zhang"}];
+                                    paylist = [{"pay_id":"1","amount":"1000","use":"電気代１２３４５６７８９０１２３４５６７８９０","payer_id":"1","payer_name":"ra","users_id":"1,2,3","users_name":"ra,chen,zhang","regist_date":"2018-01-01 00:00","jd_done_flag":"1","detail":[{"date":"2018-01-01 00:00:00","amount":"1000","done":"0","name":"張　文睿"},{"date":"2018-01-02 00:00:00","amount":"1000","done":"0","name":"陳　楊"}]}
+                                               , {"pay_id":"2","amount":"1000","use":"電気代","payer_id":"1","payer_name":"ra","users_id":"1,2,3","users_name":"ra,chen,zhang","regist_date":"2018-01-01 00:00","jd_done_flag":"0","detail":[{"date":"2018-01-01 00:00:00","amount":"1000","done":"0","name":"張　文睿"},{"date":"2018-01-02 00:00:00","amount":"1000","done":"0","name":"陳　楊"}]}];
+                                               
+                                               initialize(userlist, paylist);
+                                }
+                                // サーバーにアクセスモードで
+                                else {
+                                    var xmlhttp = new XMLHttpRequest();
+                                    var url = "http://0.0.0.0:3000/initMain";
+                                    
+                                    xmlhttp.onreadystatechange = function() {
+                                        if(this.readyState == 4 ){
+                                            if (this.status == 200) {
+                                                var respInfo = JSON.parse(this.responseText);
+                                                userlist = respInfo["user"];
+                                                paylist = respInfo["pay"];
+                                                // init実施
+                                                initialize(userlist, paylist);
+                                            } else {
+                                                alert("サーバーに接続失敗");
+                                                return;
+                                            }
+                                        }
+                                    };
+                                    xmlhttp.open("GET", url, false);
+                                    xmlhttp.send();
+                                    
+                                }
+                            }
+                        
+                        
+                        function initialize(userlist, paylist){
+                            
+                            //alert(userlist);
+                            var payerList = document.getElementById("input-pay-payer");
+                            for (var row of userlist) {
+                                payerList.add( new Option(row["name"], row["id"]) );
+                            }
+                            
+                            
+                            // 支払い登録のユーザーcheckBox
+                            for (var row of userlist) {
+                                var id = row["id"]
+                                var name = row["name"]
+                                var chkboxstr = '<input type="checkbox" name="users" value="' + id + '" id="' + id + '">' + '&nbsp;&nbsp;&nbsp;&nbsp;<label for="' + id + '">' + name + '</label></br>';
+                                $('#hoge-checkbox-users').append(chkboxstr);
+                            }
+                            
+                            // 支払い一覧生成
+                            //paylist = info["pay"];
+                            var tb = document.getElementById("payList").getElementsByTagName('tbody')[0];
+                            var i = 1;
+                            for (var row of paylist) {
+                                var tr = tb.insertRow(-1)
+                                
+                                if(row["jd_done_flag"] != "1"){
+                                    tr.style.color = "red";
+                                }
+                                tr.insertCell(-1).innerHTML = i;
+                                tr.insertCell(-1).innerHTML = row["pay_id"];
+                                tr.insertCell(-1).innerHTML = row["amount"];
+                                tr.insertCell(-1).innerHTML = row["use"];
+                                tr.insertCell(-1).innerHTML = row["payer_name"];
+                                tr.insertCell(-1).innerHTML = row["users_name"];
+                                tr.insertCell(-1).innerHTML = row["regist_date"];
+                                tr.insertCell(-1).innerHTML = row["jd_done_flag"] == "1" ? "〇" : "×";
+                                
+                                //詳細ボタン
+                                
+                                var datailJson = row["detail"];
+                                var datailText = "";
+                                var sp = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+                                for(rowDetail of datailJson){
+                                    var flag = "×";
+                                    if(rowDetail["done"] == "1"){
+                                        flag = "〇"
+                                    }
+                                    datailText = datailText + rowDetail["name"]
+                                    + sp + rowDetail["amount"]
+                                    + sp + rowDetail["date"]
+                                    + sp + flag
+                                    + "</br>"
+                                }
+                                
+                                // 例：[{"date":"2018-01-01 00:00:00","amount":"1000","done":"0","name":"張　文睿"},{"date":"2018-01-02 00:00:00","amount":"1000","done":"0","name":"陳　楊"}]
+                                // alert(datailText);
+                                
+                                var bt = '<button type="button"   data-toggle="modal" data-target="#detailModal" class="btn btn-warning btn-sm" data-whatever="' + datailText + '">詳細</button>'
+                                tr.insertCell(-1).innerHTML = bt;
+                                
+                                i++;
+                            }
+                        }
+                        
+                        // 支払い登録押下
+                        function clickRegist(){
+                            
+                            // alert("登録押下")
+                            
+                            // 引数を詰める
+                            var param = {};
+                            param.amount=$('#input-pay-amount').val(); // 引数.金額
+                            param.useText=$('#input-pay-use').val(); // 引数.用途
+                            
+                            var elePayer = document.getElementById("input-pay-payer");
+                            param.payer=elePayer.options[elePayer.selectedIndex].value;// 引数.支払者
+                            
+                            var users = ""
+                            var eleUsers = document.getElementsByName('users') ;
+                            for(var i = 0 ; i < eleUsers.length ; i ++){
+                                if(eleUsers[i].checked == true){
+                                    if(users == ""){
+                                        users = eleUsers[i].value;
+                                    } else {
+                                        users = users + "," + eleUsers[i].value;
+                                    }
+                                }
+                            }
+                            param.users=users; // 引数.使用者
+                            
+                            // 非空白のチェック
+                            if(    param.amount == ""
+                               ||  param.useText == ""
+                               ||  param.payer == ""
+                               ||  param.users == ""){
+                                
+                                alert("未入力があります。")
+                                return;
+                            }
+                               
+                               
+                               // テストモードで仮データ
+                               if("1" == $('#testFlag').val()){
+                                   alert("登録成功");
+                                   location.reload();
+                               }
+                               // サーバーにアクセスモードで
+                               else {
+                                   var xmlhttp = new XMLHttpRequest();
+                                   var url = "http://0.0.0.0:3000/createPayBiz";
+                                   
+                                   // サーバに対して解析方法を指定する
+                                   
+                                   xmlhttp.onreadystatechange = function() {
+                                       if(this.readyState == 4 ){
+                                           if (this.status == 200) {
+                                               // 現在のページをリロード
+                                               location.reload();
+                                               alert("登録成功");
+                                           } else {
+                                               alert("サーバーに接続失敗");
+                                               return;
+                                           }
+                                       }
+                                   };
+                                   xmlhttp.open("POST", url, false);
+                                   //xmlhttp.setRequestHeader( 'Content-Type', 'application/json');
+                                   xmlhttp.send(JSON.stringify(param));
+                                   
+                               }
+                        }
+                        
+                        $(function () {
+                          
+                          // 詳細押下-表示後処理
+                          $('#detailModal').on('hidden.bs.modal', function (e) {
+                                               // クリア
+                                               var div = document.getElementById("detail_text");
+                                               div.innerHTML = "";
+                                               })
+                          
+                          
+                          
+                          // 詳細押下
+                          $('#detailModal').on('show.bs.modal', function (e) {
+                                               //alert("詳細押下");
+                                               var button = $(e.relatedTarget); //モーダルを呼び出すときに使われたボタンを取得
+                                               var txt = button.data("whatever");
+                                               //alert(txt);
+                                               div = document.getElementById("detail_text");
+                                               div.innerHTML = txt;
+                                               
+                                               })
+                          });
+                          
+                            </script>
+                        </head>
+    
+    
+    <body onLoad="initPage()">
+        <!-- header. fix me,共通化 -->
+        
+        <div class="container"">
+            <header class="blog-header py-3">
+            <div class="row flex-nowrap justify-content-between align-items-center">
+            <div class="col-4 pt-1">
+            <a class="text-muted" href="#"><h6>LauncHope co.,ltd.</h6></a>
+            </div>
+            <div class="col-4 text-center">
+            <a class="blog-header-logo text-dark" href="#"><h2>精算の巻</h2></a>
+            </div>
+            <div class="col-4 d-flex justify-content-end align-items-center">
+            <a class="text-muted" href="#">
+            </a>
+            <a class="btn btn-sm btn-outline-secondary" href="#">Sign up</a>
+            </div>
+            </div>
+            </header>
+            <hr>
+            <div class="nav-scroller py-1 mb-2">
+            <nav class="nav d-flex justify-content-between">
+            <a class="p-2 text-muted" href="./main.html">ホーム</a>
+            <a class="p-2 text-muted" href="./main.html">支払い</a>
+            <a class="p-2 text-muted" href="./adjust.html">精算</a>
+            <a class="p-2 text-muted" href="./history.html">履歴</a>
+            <a class="p-2 text-muted" href="#">連絡</a>
+            </nav>
+            </div>
+            
+            
+            
+            
+            <div class="card" style="width:100%;margin: 0 auto;margin-top: 20px;font-size: 1.2vw;">
+            <h6 class="card-header">支払い一覧</h6>
+            <div class="card-body">
+            <table id="payList" class="table table-sm">
+            <thead>
+            <tr>
+            <th scope="col">#</th>
+            <th scope="col">支払番号</th>
+            <th scope="col">金額</th>
+            <th scope="col">用途</th>
+            <th scope="col">支払人</th>
+            <th scope="col">使用人</th>
+            <th scope="col">登録日時</th>
+            <th scope="col">精算済</th>
+            <th scope="col">詳細</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+            </table>
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#exampleModal" data-whatever="@mdo">支払登録</button>
+            </div>
+            </div>
+            
+            
+            <!-- dialog 支払い新規作成 -->
+            <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">支払登録</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+            
+            <div class="form-group">
+            <div class="input-group">
+            <div class="input-group-prepend" style="width:25%;">
+            <span class="input-group-text" style="width:100%;">用途</span>
+            </div>
+            <input type="text" id="input-pay-use" class="form-control" placeholder="例：2018/01/01 食事代 山河" maxlength="100">
+            </div>
+            </div>
+            
+            <div class="form-group">
+            <div class="input-group">
+            <div class="input-group-prepend" style="width:25%;">
+            <span class="input-group-text" style="width:100%;">支払金額</span>
+            </div>
+            <input type="number" id="input-pay-amount" class="form-control"  maxlength="7">
+            </div>
+            </div>
+            
+            <div class="form-group">
+            <div class="input-group">
+            <div class="input-group-prepend" style="width:25%;">
+            <span class="input-group-text" style="width:100%;">支払人</span>
+            </div>
+            <select id="input-pay-payer">
+            <option value="">選択してください。</option>
+            </select>
+            </div>
+            </div>
+            
+            
+            <div class="form-group">
+            <div class="input-group">
+            <div class="input-group-prepend" style="width:25%;">
+            <span class="input-group-text" style="width:100%;">使用人</span>
+            </div>
+            <div class="form-control" id="hoge-checkbox-users"></div>
+            </div>
+            </div>
+            
+            
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="clickRegist()">登録</button>
+            </div>
+            </div>
+            </div>
+            </div>
+            
+            
+            <!-- Modal -->
+            <div class="modal fade bd-example-modal-lg" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+            <div class="modal-body" id="detail_text" style="font-size: 1.2vw;">
+            </div>
+            </div>
+            </div>
+            </div>
+            </div>
+            
+            
+            <footer class="footer">
+            <div class="container">
+            <span style="text-align: center;">
+            <br>
+            <p>Designed by LauncHope@711-group<br>
+            <a href="#">Back to top</a>
+            </p>
+            </span>
+            </div>
+            </footer>
+            
+            
+            
+            </body>
+            </html>
