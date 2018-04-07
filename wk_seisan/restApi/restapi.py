@@ -491,12 +491,13 @@ def getDetailsByIds():
         `event_date` as '3',
         `event_from` as '4',
         `event_to` as '5'
-        FROM `seisan`.`adjustment_event`;
+        FROM `seisan`.`adjustment_event`
+        WHERE `event_id`=%s
         '''
-            
+    
     try:
         # sql発行
-        cur.execute(sql_event_select)
+        cur.execute(sql_event_select, (eventId,))
     except RuntimeError as e:
         print('MySQLdb.Error: ', e)
 
